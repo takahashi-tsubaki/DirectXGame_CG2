@@ -132,6 +132,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
+	//コマンドアロケータを生成
+	result = dev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator));
+	assert(SUCCEEDED(result));
+
+	//コマンドリストを生成
+	result = dev->CreateCommandList(0,D3D12_COMMAND_LIST_TYPE_DIRECT,cmdAllocator,nullptr,IID_PPV_ARGS(&commandList));
+	assert(SUCCEEDED(result));
+
 	return 0;
 }
 
