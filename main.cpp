@@ -190,6 +190,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		dev->CreateRenderTargetView(buckBuffers[i],&rtvDesc,rtvHandle);
 	}
 
+	//ƒtƒFƒ“ƒX‚Ì¶¬
+	ID3D12Fence* fence = nullptr;
+	UINT64 fenceVal = 0;
+
+	result = dev->CreateFence(fenceVal,D3D12_FENCE_FLAG_NONE,IID_PPV_ARGS(&fence));
+
 	return 0;
 }
 
