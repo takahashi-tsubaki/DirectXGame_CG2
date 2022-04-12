@@ -110,6 +110,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
+	//対応レベルの取得
+	D3D_FEATURE_LEVEL levels[] =
+	{
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0,
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+	};
+
+	D3D_FEATURE_LEVEL featureLevel;
+	for (size_t i = 0; i < _countof(levels); i++)
+	{
+		//採用したアダプターでデバイスを生成
+		result = D3D12CreateDevice(tmpAdapter, levels[i], IID_PPV_ARGS(&dev));
+		if (result == S_OK)
+		{
+			//デバイスを生成した時点でループを抜ける
+			featureLevel = levels[i];
+			break;
+		}
+	}
 
 	return 0;
 }
