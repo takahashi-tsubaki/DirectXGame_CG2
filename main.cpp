@@ -1,6 +1,9 @@
 #include <Windows.h>
+#include <tchar.h>
+#include <d3d12.h>
+#include <dxgi1_6.h>
 
-#include<tchar.h>
+
 
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
