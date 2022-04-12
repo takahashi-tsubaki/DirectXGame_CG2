@@ -140,6 +140,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	result = dev->CreateCommandList(0,D3D12_COMMAND_LIST_TYPE_DIRECT,cmdAllocator,nullptr,IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(result));
 
+	//コマンドキューの設定
+	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+	//コマンドキューを生成
+	result = dev->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
+	assert(SUCCEEDED(result));
+
+
 	return 0;
 }
 
