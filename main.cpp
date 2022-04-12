@@ -70,14 +70,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	HRESULT result;
 	//受け皿となる変数
-	ID3D12Device* _dev = nullptr;
-	IDXGIFactory6* _dxgiFactory = nullptr;
-	IDXGISwapChain* _swapChain = nullptr;
+	ID3D12Device* dev = nullptr;
+	IDXGIFactory7* dxgiFactory = nullptr;
+	IDXGISwapChain4* swapChain = nullptr;
 	ID3D12CommandAllocator* cmdAllocator = nullptr;
 	ID3D12GraphicsCommandList* commandList = nullptr;
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
 
+	//DXGIファクトリーの生成
+	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	assert(SUCCEEDED(result));
+
+	//アダプターの列挙用
+	std::vector<IDXGIAdapter4*> adapters;
+	//ここに特定の名前を持つアダプターオブジェクトが入る
+	IDXGIAdapter4* tmpAdapter = nullptr;
+
+	//パフォーマンスの高い順から、全てのアダプターを列挙する
+	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tmpAdapter)) != DXGI_ERROR_NOT_FOUND; i++);
+	{
+		//動的配列に追加する
+		adapters.push_back(tmpAdapter);
+	}
 
 	return 0;
 }
