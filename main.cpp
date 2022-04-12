@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <cassert>
+#include <vector>
+#include <string>
 
 //ƒŠƒ“ƒN‚Ìİ’è
 #pragma comment(lib,"d3d12.lib")
@@ -65,6 +67,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 	UnregisterClass(w.lpszClassName, w.hInstance);
+
+	HRESULT result;
+	//ó‚¯M‚Æ‚È‚é•Ï”
+	ID3D12Device* _dev = nullptr;
+	IDXGIFactory6* _dxgiFactory = nullptr;
+	IDXGISwapChain* _swapChain = nullptr;
+	ID3D12CommandAllocator* cmdAllocator = nullptr;
+	ID3D12GraphicsCommandList* commandList = nullptr;
+	ID3D12CommandQueue* commandQueue = nullptr;
+	ID3D12DescriptorHeap* rtvHeap = nullptr;
+
 
 	return 0;
 }
