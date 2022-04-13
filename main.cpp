@@ -37,7 +37,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//ウィンドウオブジェクトの生成
 	HWND hwnd = CreateWindow(w.lpszClassName,//クラス名指定
-		_T("DX12テスト"),//タイトルバーの文字
+		_T("DX12Test"),//タイトルバーの文字
 		WS_OVERLAPPEDWINDOW,//タイトルバーと境界線があるウィンドウ
 		CW_USEDEFAULT,//表示x座標はOSにお任せ
 		CW_USEDEFAULT,//表示y座標はOSにお任せ
@@ -52,22 +52,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	MSG msg{};
 
-	while (true)
+	//ここからDirectX初期化処理
+#ifdef _DEBUG
+	//デバックレイヤーをオンに
+	ID3D12Debug* debugController;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-
-		}
-
-		if (msg.message == WM_QUIT)
-		{
-			break;
-		}
+		debugController->EnableDebugLayer();
 	}
-	UnregisterClass(w.lpszClassName, w.hInstance);
-
+#endif
+	
 	HRESULT result;
 	//受け皿となる変数
 	ID3D12Device* dev = nullptr;
@@ -78,17 +72,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
 
+	
 	//DXGIファクトリーの生成
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(result));
 
 	//アダプターの列挙用
 	std::vector<IDXGIAdapter4*> adapters;
+
 	//ここに特定の名前を持つアダプターオブジェクトが入る
 	IDXGIAdapter4* tmpAdapter = nullptr;
 
 	//パフォーマンスの高い順から、全てのアダプターを列挙する
-	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tmpAdapter)) != DXGI_ERROR_NOT_FOUND; i++);
+	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i,
+		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+		IID_PPV_ARGS(&tmpAdapter)) 
+		!= DXGI_ERROR_NOT_FOUND; i++)
 	{
 		//動的配列に追加する
 		adapters.push_back(tmpAdapter);
@@ -110,6 +109,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
+	
 	//対応レベルの取得
 	D3D_FEATURE_LEVEL levels[] =
 	{
@@ -137,7 +137,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 	//コマンドリストを生成
-	result = dev->CreateCommandList(0,D3D12_COMMAND_LIST_TYPE_DIRECT,cmdAllocator,nullptr,IID_PPV_ARGS(&commandList));
+	result = dev->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAllocator, nullptr, IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(result));
 
 	//コマンドキューの設定
@@ -166,17 +166,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rtvHeapDesc.NumDescriptors = swapChainDesc.BufferCount;//裏表の2つ
 
 	//デスクリプタヒープの生成
-	dev->CreateDescriptorHeap(&rtvHeapDesc,IID_PPV_ARGS(&rtvHeap));//先にデスクリプタヒープを作る
+	dev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));//先にデスクリプタヒープを作る
 
 	//バックバッファ
-	std::vector<ID3D12Resource*>buckBuffers;
-	buckBuffers.resize(swapChainDesc.BufferCount);//スワップチェーン内に生成されたバックバッファのアドレスを入れておくためのポインタを用意する
+	std::vector<ID3D12Resource*>backBuffers;
+	backBuffers.resize(swapChainDesc.BufferCount);//スワップチェーン内に生成されたバックバッファのアドレスを入れておくためのポインタを用意する
 
 	//スワップチェーンの全てのバッファについて処理する
-	for (size_t i = 0; i < buckBuffers.size(); i++)
+	for (size_t i = 0; i < backBuffers.size(); i++)
 	{
 		//スワップチェーンからバッファを取得
-		swapChain->GetBuffer((UINT)i, IID_PPV_ARGS(&buckBuffers[i]));
+		swapChain->GetBuffer((UINT)i, IID_PPV_ARGS(&backBuffers[i]));
 		//デスクリプタヒープのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		//表か裏かでアドレスがずれる
@@ -187,14 +187,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		//レンダーターゲットビューの生成
-		dev->CreateRenderTargetView(buckBuffers[i],&rtvDesc,rtvHandle);
+		dev->CreateRenderTargetView(backBuffers[i], &rtvDesc, rtvHandle);
 	}
 
 	//フェンスの生成
 	ID3D12Fence* fence = nullptr;
 	UINT64 fenceVal = 0;
 
-	result = dev->CreateFence(fenceVal,D3D12_FENCE_FLAG_NONE,IID_PPV_ARGS(&fence));
+	result = dev->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+
+	//ここまでDirectX初期化処理
+
+	while (true)
+	{
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+
+		}
+
+		if (msg.message == WM_QUIT)
+		{
+			break;
+		}
+		//バックバッファの番号を解除
+		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
+
+		// １．リソースバリアで書き込み可能に変更
+		D3D12_RESOURCE_BARRIER barrierDesc{};
+		barrierDesc.Transition.pResource = backBuffers[bbIndex];//バックバッファを指定
+		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;//表示状態から
+		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態へ
+
+
+		
+
+	}
+	UnregisterClass(w.lpszClassName, w.hInstance);
+
 
 	return 0;
 }
