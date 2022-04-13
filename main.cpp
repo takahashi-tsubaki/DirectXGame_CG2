@@ -6,13 +6,14 @@
 #include <vector>
 #include <string>
 #include <DirectXMath.h>
+#include <d3dcompiler.h>
 
 using namespace DirectX;
-
 
 //リンクの設定
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"d3dcompiler.lib")
 //関数のプロトタイプ宣言
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -258,6 +259,64 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vbView.SizeInBytes = sizeVB;
 	//頂点1つ分のデータサイズ
 	vbView.StrideInBytes = sizeof(XMFLOAT3);
+
+	ID3DBlob* vsBlob = nullptr;//頂点シェーダオブジェクト
+	ID3DBlob* psBlob = nullptr;//ピクセルシェーダオブジェクト
+	ID3DBlob* errorBlob = nullptr;//エラーオブジェクト
+
+	//頂点シェーダの読み込みとコンパイル
+	result = D3DCompileFromFile(
+		L"BasicVS.hlsl",//シェーダーファイル名
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,//インクルードを可能にする
+		"main",//エントリーポイント
+		"vs_5_0",//シェーダモデル指定
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,//デバック用設定
+		0,
+		&vsBlob, &errorBlob);
+
+	//コンパイルエラーなら
+	if (FAILED(result))
+	{
+		//errorBlobからエラー内容をstirng型にコピー
+		std::string error;
+		error.resize(errorBlob->GetBufferSize());
+
+		std::copy_n((char*)errorBlob->GetBufferPointer(),
+			errorBlob->GetBufferPointer(),
+			error.begin());
+		error += "\n";
+		//エラー内容を出力ウィンドウに表示
+		OutputDebugStringA(error.c_str());
+		assert(0);
+	}
+
+	//ピクセルシェーダの読み込みとコンパイル
+	result = D3DCompileFromFile(
+		L"BasicPS.hlsl",//シェーダファイル名
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"ps_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&psBlob, &errorBlob);
+
+	//コンパイルエラーなら
+	if (FAILED(result))
+	{
+		//errorBlobからエラー内容をstirng型にコピー
+		std::string error;
+		error.resize(errorBlob->GetBufferSize());
+
+		std::copy_n((char*)errorBlob->GetBufferPointer(),
+			errorBlob->GetBufferPointer(),
+			error.begin());
+		error += "\n";
+		//エラー内容を出力ウィンドウに表示
+		OutputDebugStringA(error.c_str());
+		assert(0);
+	}
 
 
 
