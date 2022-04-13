@@ -9,7 +9,7 @@
 //リンクの設定
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
-
+//関数のプロトタイプ宣言
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
@@ -211,6 +211,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{
 			break;
 		}
+		//ここからDirectX毎フレーム処理
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -219,9 +220,53 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		barrierDesc.Transition.pResource = backBuffers[bbIndex];//バックバッファを指定
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;//表示状態から
 		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態へ
+		commandList->ResourceBarrier(1, &barrierDesc);
 
+		//　２．描画先の変更
+		//レンダーターゲットビューのハンドルを取得
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+		rtvHandle.ptr += bbIndex * dev->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
+		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
-		
+		// ３．画面クリア          R     G     B     A(alpha)
+		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
+		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		//　４．ここから描画コマンド
+		//　４．ここまで描画コマンド
+
+		//　５．リソースバリアを戻す
+		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;//描画状態から
+		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;//表示状態へ
+		commandList->ResourceBarrier(1, &barrierDesc);
+
+		//命令のクローズ
+		result = commandList->Close();
+		assert(SUCCEEDED(result));
+		//コマンドリストの実行
+		ID3D12CommandList* commandLists[] = { commandList };
+		commandQueue->ExecuteCommandLists(1, commandLists);
+
+		//画面に表示するバッファをフリップ (裏表の入れ替え)
+		result = swapChain->Present(1, 0);
+		assert(SUCCEEDED(result));
+
+		//コマンドの実行完了を待つ
+		commandQueue->Signal(fence, ++fenceVal);
+		if (fence->GetCompletedValue() != fenceVal)
+		{
+			HANDLE event = CreateEvent(nullptr, false, false, nullptr);
+			fence->SetEventOnCompletion(fenceVal, event);
+			WaitForSingleObject(event, INFINITE);
+			CloseHandle(event);
+		}
+
+		//キューをクリア
+		result = cmdAllocator->Reset();
+		assert(SUCCEEDED(result));
+		//再びコマンドリストをためる準備
+		result = commandList->Reset(cmdAllocator, nullptr);
+		assert(SUCCEEDED(result));
 
 	}
 	UnregisterClass(w.lpszClassName, w.hInstance);
