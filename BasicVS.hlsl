@@ -1,5 +1,5 @@
 //頂点シェーダ
 float4 main( float4 pos : POSITION ) : SV_POSITION
 {
-	return pos;
+	return pos * float4(0.5f,0.5f,1,1);
 }
