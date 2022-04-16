@@ -318,6 +318,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//	assert(0);
 	//}
 
+
 	//頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
