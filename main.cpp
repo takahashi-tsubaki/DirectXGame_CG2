@@ -7,6 +7,8 @@
 #include <string>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#define DIRECTINPUT_VERSION  0x0800
+#include <dinput.h>
 
 using namespace DirectX;
 
@@ -14,6 +16,9 @@ using namespace DirectX;
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
+#pragma comment(lib,"dinput8.lib")//directInputのバージョン
+#pragma comment(lib,"dxguid.lib")
+
 //関数のプロトタイプ宣言
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -201,6 +206,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	result = dev->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
+	//DirectInputの初期化
+	IDirectInput8* directInput = nullptr;
+	result = DirectInput8Create(w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+	assert(SUCCEEDED(result));
+
+	//キーボードデバイスの生成
+	IDirectInputDevice8* keyboard = nullptr;
+	result = directInput->CreateDevice(GUID_SysKeyboard,&keyboard,NULL);
+	assert(SUCCEEDED(result));
+
+	//入力データ形式のセット
+	result = keyboard->SetDataFormat(&c_dfDIKeyboard);
+	assert(SUCCEEDED(result));
+
+	//排他制御レベルのセット
+	result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(result));
+	//DISCL_FOREGROUND   画面が手前にある場合のみ入力を受け付ける
+	//DISCL_NONEXCLUSIVE デバイスをこのアプリだけで専有しない
+	//DISCL_NOWINKEY     Windowsキーを無効にする
+
+
+
 	//ここまでDirectX初期化処理
 
 	//ここから描画初期化処理
@@ -385,8 +413,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	result = dev->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
 
+	//ゲームループ
 	while (true)
 	{
+		//ウィンドウメッセージ処理
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -398,6 +428,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{
 			break;
 		}
+
 		//ここからDirectX毎フレーム処理
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -457,7 +488,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//描画コマンド
 		commandList->DrawInstanced(_countof(vertices),1, 0, 0);//全ての頂点を使って描画
 
-		
 		//　４．ここまで描画コマンド
 
 		//　５．リソースバリアを戻す
@@ -468,6 +498,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//命令のクローズ
 		result = commandList->Close();
 		assert(SUCCEEDED(result));
+
 		//コマンドリストの実行
 		ID3D12CommandList* commandLists[] = { commandList };
 		commandQueue->ExecuteCommandLists(1, commandLists);
@@ -492,6 +523,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//再びコマンドリストをためる準備
 		result = commandList->Reset(cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
+
+		//キーボード情報の取得開始
+		keyboard->Acquire();
+
+		//全キーの入力情報を取得する
+		BYTE key[256] = {};
+		keyboard->GetDeviceState(sizeof(key), key);
+
+		if (key[DIK_SPACE])
+		{
+			/*OutputDebugStringA("Hit 0\n");*/
+		}
+
 		//ここまでDirectX毎フレーム処理
 	}
 	UnregisterClass(w.lpszClassName, w.hInstance);
