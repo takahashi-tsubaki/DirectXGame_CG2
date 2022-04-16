@@ -207,6 +207,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//頂点データ
 	XMFLOAT3 vertices[] =
 	{
+		// x     y    z    //座標
 		{-0.5f,-0.5f,0.0f},//左下
 		{-0.5f,+0.5f,0.0f},//左上
 		{+0.5f,-0.5f,0.0f},//右下
@@ -264,7 +265,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3DBlob* psBlob = nullptr;//ピクセルシェーダオブジェクト
 	ID3DBlob* errorBlob = nullptr;//エラーオブジェクト
 
-	//頂点シェーダの読み込みとコンパイル
+	//頂点シェーダの読み込みとコンパイル(頂点シェーダは頂点の座標変換)
 	result = D3DCompileFromFile(
 		L"BasicVS.hlsl",//シェーダーファイル名
 		nullptr,
@@ -291,7 +292,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//	assert(0);
 	//}
 
-	//ピクセルシェーダの読み込みとコンパイル
+	//ピクセルシェーダの読み込みとコンパイル(ピクセルの役割は描画色の設定)
 	result = D3DCompileFromFile(
 		L"BasicPS.hlsl",//シェーダファイル名
 		nullptr,
@@ -341,7 +342,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//サンプルマスクの設定
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;//標準設定
 
-	//ラスタライザの設定
+	//ラスタライザの設定(頂点のピクセル化)
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶし
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
@@ -415,7 +416,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// ３．画面クリア          R     G     B     A(alpha)
+
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
+
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		//　４．ここから描画コマンド
