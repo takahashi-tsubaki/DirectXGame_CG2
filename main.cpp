@@ -373,6 +373,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ラスタライザの設定(頂点のピクセル化)
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶし
+	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
 	//ブレンドステート
@@ -430,6 +431,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 
 		//ここからDirectX毎フレーム処理
+
+		//キーボード情報の取得開始
+		keyboard->Acquire();
+		BYTE key[256] = {};
+		keyboard->GetDeviceState(sizeof(key), key);
+
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -449,6 +456,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// ３．画面クリア          R     G     B     A(alpha)
 
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
+			//全キーの入力情報を取得する
+		if (key[DIK_SPACE])
+		{
+			/*OutputDebugStringA("Hit 0\n");*/
+			clearColor[1] = {0.1f};
+		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
@@ -524,17 +537,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		result = commandList->Reset(cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
 
-		//キーボード情報の取得開始
-		keyboard->Acquire();
-
-		//全キーの入力情報を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
-
-		if (key[DIK_SPACE])
-		{
-			/*OutputDebugStringA("Hit 0\n");*/
-		}
+		
 
 		//ここまでDirectX毎フレーム処理
 	}
