@@ -523,18 +523,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		result = commandList->Reset(cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
 
-		//キーボード情報の取得開始
-		keyboard->Acquire();
-
-		//全キーの入力情報を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
-
-		if (key[DIK_SPACE])
-		{
-			/*OutputDebugStringA("Hit 0\n");*/
-		}
-
 		//ここまでDirectX毎フレーム処理
 	}
 	UnregisterClass(w.lpszClassName, w.hInstance);
