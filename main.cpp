@@ -447,7 +447,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// ３．画面クリア          R     G     B     A(alpha)
-
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
