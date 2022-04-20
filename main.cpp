@@ -456,11 +456,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// ３．画面クリア          R     G     B     A(alpha)
 
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
-			//全キーの入力情報を取得する
+		FLOAT a[] = { 0.1f,0.1f,0.5f,0.0f };
+
+
+		//全キーの入力情報を取得する
 		if (key[DIK_SPACE])
 		{
 			/*OutputDebugStringA("Hit 0\n");*/
-			clearColor[1] = {0.1f};
+			for (int i = 0; i < _countof(clearColor); i++)
+			{
+				clearColor[i] = a[i];
+			}
+			/*clearColor[1] = {0.1f};*/
 		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
