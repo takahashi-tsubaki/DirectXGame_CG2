@@ -465,7 +465,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				clearColor[i] = a[i];
 			}
-			/*clearColor[1] = {0.1f};*/
 		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
