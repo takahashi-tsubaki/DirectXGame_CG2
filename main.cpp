@@ -26,8 +26,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	OutputDebugStringA("Hello DirectX!!\n");
 
-	const int window_width = 960;
-	const int window_height = 480;
+	const int window_width =  960;
+	const int window_height = 640;
 
 	WNDCLASSEX w = {};
 
@@ -158,8 +158,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//スワップチェーンの設定
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-	swapChainDesc.Width = 1280;
-	swapChainDesc.Height = 720;
+	swapChainDesc.Width = window_width;
+	swapChainDesc.Height = window_height;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;//色情報の書式
 	swapChainDesc.SampleDesc.Count = 1;//マルチサンプルしない
 	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;//バックバッファ用
@@ -473,7 +473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//　４．ここから描画コマンド
 		//ビューポートの設定コマンド
 		D3D12_VIEWPORT viewport[4]{};
-		for (int i = 0; i < _countof(viewport); i++)
+		/*for (int i = 0; i < _countof(viewport); i++)
 		{
 			viewport[i].Width = window_width;
 			viewport[i].Height = window_height;
@@ -481,17 +481,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			viewport[i].TopLeftY = 0;
 			viewport[i].MinDepth = 0.0f;
 			viewport[i].MaxDepth = 1.0f;
-		}
+		}*/
 		
 		/*viewport[1].Width = 500;*/
 
-		viewport[1].TopLeftX = 500;
+		//viewport[1].TopLeftX = 500;
 
-		viewport[2].TopLeftY = 250;
+		//viewport[2].TopLeftY = 250;
 
-		viewport[3].TopLeftX = 500;
-		viewport[3].TopLeftY = 250;
+		//viewport[3].TopLeftX = 500;
+		//viewport[3].TopLeftY = 250;
 
+		viewport[0].Width = window_width;
+		viewport[0].Height = window_height;
+		viewport[0].TopLeftX = -300;
+		viewport[0].TopLeftY = -100;
+		viewport[0].MinDepth = 0.0f;
+		viewport[0].MaxDepth = 1.0f;
+
+		viewport[1].Width = window_width;
+		viewport[1].Height = window_height;
+		viewport[1].TopLeftX = -300;
+		viewport[1].TopLeftY = 200;
+		viewport[1].MinDepth = 0.0f;
+		viewport[1].MaxDepth = 1.0f;
+
+		viewport[2].Width = window_width;
+		viewport[2].Height = window_height;
+		viewport[2].TopLeftX = 200;
+		viewport[2].TopLeftY = -100;
+		viewport[2].MinDepth = 0.0f;
+		viewport[2].MaxDepth = 1.0f;
+
+		viewport[3].Width = window_width;
+		viewport[3].Height = window_height/2;
+		viewport[3].TopLeftX = 200;
+		viewport[3].TopLeftY = 400;
+		viewport[3].MinDepth = 0.0f;
+		viewport[3].MaxDepth = 1.0f;
+
+		
 		//ビューポート設定コマンドを、コマンドリストに積む
 		commandList->RSSetViewports(1, &viewport[0]);
 
