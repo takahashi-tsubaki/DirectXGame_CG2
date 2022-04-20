@@ -373,7 +373,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ラスタライザの設定(頂点のピクセル化)
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶし
-	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ワイヤーフレーム
+	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WAREFRAME;//ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
 	//ブレンドステート
@@ -472,16 +472,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//　４．ここから描画コマンド
 		//ビューポートの設定コマンド
-		D3D12_VIEWPORT viewport{};
-		viewport.Width = window_width;
-		viewport.Height = window_height;
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
+		D3D12_VIEWPORT viewport[4]{};
+		for (int i = 0; i < _countof(viewport); i++)
+		{
+			viewport[i].Width = window_width;
+			viewport[i].Height = window_height;
+			viewport[i].TopLeftX = 0;
+			viewport[i].TopLeftY = 0;
+			viewport[i].MinDepth = 0.0f;
+			viewport[i].MaxDepth = 1.0f;
+		}
+		
+		/*viewport[1].Width = 500;*/
+
+		viewport[1].TopLeftX = 500;
+
+		viewport[2].TopLeftY = 250;
+
+		viewport[3].TopLeftX = 500;
+		viewport[3].TopLeftY = 250;
 
 		//ビューポート設定コマンドを、コマンドリストに積む
-		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetViewports(1, &viewport[0]);
 
 		//シザー矩形
 		D3D12_RECT scissorRect{};
@@ -505,7 +517,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//描画コマンド
 		commandList->DrawInstanced(_countof(vertices),1, 0, 0);//全ての頂点を使って描画
+		//ビューポート設定コマンドを、コマンドリストに積む
+		commandList->RSSetViewports(1, &viewport[1]);
+		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 
+		commandList->RSSetViewports(1, &viewport[2]);
+		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
+
+		commandList->RSSetViewports(1, &viewport[3]);
+		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 		//　４．ここまで描画コマンド
 
 		//　５．リソースバリアを戻す
