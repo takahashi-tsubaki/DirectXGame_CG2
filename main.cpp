@@ -253,9 +253,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	XMFLOAT3 vertices[] =
 	{
 		// x     y    z    //座標
-		{-0.5f,-0.5f,0.0f},//左下
-		{-0.5f,+0.5f,0.0f},//左上
+		{-0.5f,-0.5f,0.0f},//左下	
 		{+0.5f,-0.5f,0.0f},//右下
+		{-0.5f, 0.0f,0.0f},//左中
+		{+0.5f, 0.0f,0.0f},//右中
+		{-0.5f,+0.5f,0.0f},//左上
 		{+0.5f,+0.5f,0.0f},//右上
 	};
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
@@ -515,8 +517,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
 
-	XMFLOAT4 objectColor = {1,0,0,0.5f};
-
 	//ゲームループ
 	while (true)
 	{
@@ -553,23 +553,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// ３．画面クリア          R     G     B     A(alpha)
 
-
-		if (objectColor.y < 1)
-		{
-			objectColor.y += 0.001f;
-		}
-		else if(objectColor.y >= 1)
-		{
-			objectColor.z += 0.001f;
-		}
-		if (objectColor.z >= 1 && objectColor.y >= 1)
-		{
-			objectColor.y = 0.0f;
-			objectColor.z = 0.0f;
-		}
-
-		constMapMaterial->color = objectColor;
-
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		//　４．ここから描画コマンド
@@ -583,7 +566,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		viewport[0].MinDepth = 0.0f;
 		viewport[0].MaxDepth = 1.0f;
 
-		viewport[1].Width = window_width;
+		/*viewport[1].Width = window_width;
 		viewport[1].Height = window_height;
 		viewport[1].TopLeftX = -300;
 		viewport[1].TopLeftY = 200;
@@ -602,7 +585,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		viewport[3].TopLeftX = 200;
 		viewport[3].TopLeftY = 400;
 		viewport[3].MinDepth = 0.0f;
-		viewport[3].MaxDepth = 1.0f;
+		viewport[3].MaxDepth = 1.0f;*/
 
 
 		//ビューポート設定コマンドを、コマンドリストに積む
@@ -640,14 +623,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		
 		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 		//ビューポート設定コマンドを、コマンドリストに積む
-		commandList->RSSetViewports(1, &viewport[1]);
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
+		//commandList->RSSetViewports(1, &viewport[1]);
+		//commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 
-		commandList->RSSetViewports(1, &viewport[2]);
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
+		//commandList->RSSetViewports(1, &viewport[2]);
+		//commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 
-		commandList->RSSetViewports(1, &viewport[3]);
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
+		//commandList->RSSetViewports(1, &viewport[3]);
+		//commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 		//　４．ここまで描画コマンド
 
 		//　５．リソースバリアを戻す
