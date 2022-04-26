@@ -9,6 +9,7 @@
 #include <d3dcompiler.h>
 #define DIRECTINPUT_VERSION  0x0800
 #include <dinput.h>
+#include <wrl.h>
 
 using namespace DirectX;
 
@@ -22,11 +23,26 @@ using namespace DirectX;
 //関数のプロトタイプ宣言
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+#pragma region 入力関数
+//キーの初期化処理関数
+void keyInitialize(BYTE* key,BYTE* oldkey, int array);
+//キーが押されてる時
+bool pushKey(BYTE key,int keyNum);
+//キーが押されてない時
+bool notPushKey(BYTE* key, int keyNum);
+//キーが押した時
+bool pressKey(BYTE* key, BYTE* oldkey, int keyNum);
+//キー長押ししてる時
+bool triggerKey(BYTE* key, BYTE* oldkey, int keyNum);
+//キーを離した時
+bool releaseKey(BYTE* key, BYTE* oldkey, int keyNum);
+#pragma endregion 入力関数
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	OutputDebugStringA("Hello DirectX!!\n");
 
-	const int window_width =  960;
+	const int window_width = 960;
 	const int window_height = 640;
 
 	WNDCLASSEX w = {};
@@ -71,7 +87,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		debugController->EnableDebugLayer();
 	}
 #endif
-	
+
 	HRESULT result;
 	//受け皿となる変数
 	ID3D12Device* dev = nullptr;
@@ -82,7 +98,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
 
-	
+
 	//DXGIファクトリーの生成
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(result));
@@ -96,7 +112,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//パフォーマンスの高い順から、全てのアダプターを列挙する
 	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i,
 		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-		IID_PPV_ARGS(&tmpAdapter)) 
+		IID_PPV_ARGS(&tmpAdapter))
 		!= DXGI_ERROR_NOT_FOUND; i++)
 	{
 		//動的配列に追加する
@@ -119,7 +135,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
-	
+
 	//対応レベルの取得
 	D3D_FEATURE_LEVEL levels[] =
 	{
@@ -213,7 +229,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//キーボードデバイスの生成
 	IDirectInputDevice8* keyboard = nullptr;
-	result = directInput->CreateDevice(GUID_SysKeyboard,&keyboard,NULL);
+	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
 	assert(SUCCEEDED(result));
 
 	//入力データ形式のセット
@@ -239,6 +255,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{-0.5f,-0.5f,0.0f},//左下
 		{-0.5f,+0.5f,0.0f},//左上
 		{+0.5f,-0.5f,0.0f},//右下
+		{+0.5f,+0.5f,0.0f},//右上
 	};
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -373,7 +390,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ラスタライザの設定(頂点のピクセル化)
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;//カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;//ポリゴン内塗りつぶし
-	//pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WAREFRAME;//ワイヤーフレーム
 	pipelineDesc.RasterizerState.DepthClipEnable = true;//深度クリッピングを有効に
 
 	//ブレンドステート
@@ -394,7 +410,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ルートシグネチャ
 	ID3D12RootSignature* rootSignature;
 
-	//ルートシグネチャの設定
+	//ルートシグネチャの生成
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -413,6 +429,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12PipelineState* pipelineState = nullptr;
 	result = dev->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
+
+	ID3D12PipelineState* pipelineStateWireFlame = nullptr;
+	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;//ワイヤーフレーム
+	result = dev->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineStateWireFlame));
+	assert(SUCCEEDED(result));
+
+	bool shape = FALSE;
+
+	bool wireFlame = FALSE;
+
+	BYTE key[256] = {};
+	BYTE oldkey[256] = {};
 
 	//ゲームループ
 	while (true)
@@ -434,7 +462,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//キーボード情報の取得開始
 		keyboard->Acquire();
-		BYTE key[256] = {};
+		keyInitialize(key, oldkey, sizeof(key) / sizeof(key[0]));
 		keyboard->GetDeviceState(sizeof(key), key);
 
 		//バックバッファの番号を解除
@@ -470,29 +498,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 		}
 
+		if (key[DIK_1] && !oldkey[DIK_1])
+		{
+			shape = !shape;
+		}
+
+		if (key[DIK_2] && !oldkey[DIK_2])
+		{
+			wireFlame = !wireFlame;
+		}
+
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		//　４．ここから描画コマンド
 		//ビューポートの設定コマンド
 		D3D12_VIEWPORT viewport[4]{};
-		/*for (int i = 0; i < _countof(viewport); i++)
-		{
-			viewport[i].Width = window_width;
-			viewport[i].Height = window_height;
-			viewport[i].TopLeftX = 0;
-			viewport[i].TopLeftY = 0;
-			viewport[i].MinDepth = 0.0f;
-			viewport[i].MaxDepth = 1.0f;
-		}*/
-		
-		/*viewport[1].Width = 500;*/
-
-		//viewport[1].TopLeftX = 500;
-
-		//viewport[2].TopLeftY = 250;
-
-		//viewport[3].TopLeftX = 500;
-		//viewport[3].TopLeftY = 250;
 
 		viewport[0].Width = window_width;
 		viewport[0].Height = window_height;
@@ -516,13 +536,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		viewport[2].MaxDepth = 1.0f;
 
 		viewport[3].Width = window_width;
-		viewport[3].Height = window_height/2;
+		viewport[3].Height = window_height / 2;
 		viewport[3].TopLeftX = 200;
 		viewport[3].TopLeftY = 400;
 		viewport[3].MinDepth = 0.0f;
 		viewport[3].MaxDepth = 1.0f;
 
-		
+
 		//ビューポート設定コマンドを、コマンドリストに積む
 		commandList->RSSetViewports(1, &viewport[0]);
 
@@ -537,17 +557,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->RSSetScissorRects(1, &scissorRect);
 
 		//パイプラインステートとルートシグネチャの設定コマンド
-		commandList->SetPipelineState(pipelineState);
+		if (wireFlame)//ワイヤーフレーム
+		{
+			commandList->SetPipelineState(pipelineStateWireFlame);
+
+		}
+		else//塗りつぶし
+		{
+			commandList->SetPipelineState(pipelineState);
+
+		}
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		//プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+		/*commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);*/
+		if (shape)
+		{
+			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		}
+		else
+		{
+			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		}
 		//頂点バッファービューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
 		//描画コマンド
-		commandList->DrawInstanced(_countof(vertices),1, 0, 0);//全ての頂点を使って描画
+		
+		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
 		//ビューポート設定コマンドを、コマンドリストに積む
 		commandList->RSSetViewports(1, &viewport[1]);
 		commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
@@ -593,7 +630,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		result = commandList->Reset(cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
 
-		
+
 
 		//ここまでDirectX毎フレーム処理
 	}
@@ -603,12 +640,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	return 0;
 }
 
-LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) 
+LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg) {
 		//ウィンドウが破棄された
 	case WM_DESTROY:
-			//OSに対して,アプリの終了を伝える
+		//OSに対して,アプリの終了を伝える
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -617,6 +654,71 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+void keyInitialize(BYTE* key, BYTE* oldkey, int array)
+{
+	for (int i = 0; i < array; i++)
+	{
+		oldkey[i] = key[i];
+	}
+};
+bool pushKey(BYTE* key, int keyNum)
+{
+	if (key[keyNum])
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
 
+bool notPushKey(BYTE* key, int keyNum)
+{
+	if (!key[keyNum])
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 
+};
+
+bool pressKey(BYTE* key, BYTE* oldkey, int keyNum)
+{
+	if (key[keyNum] && oldkey[keyNum])
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool triggerKey(BYTE* key, BYTE* oldkey, int keyNum)
+{
+	if (key[keyNum] && !oldkey[keyNum])
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool releaseKey(BYTE* key, BYTE* oldkey, int keyNum)
+{
+	if (!key[keyNum] && oldkey[keyNum])
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
 
