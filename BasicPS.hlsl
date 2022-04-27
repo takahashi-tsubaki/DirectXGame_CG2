@@ -1,11 +1,13 @@
-//ピクセルシェーダ
-cbuffer ConstBufferDateMaterial : register(b0)
+#include "Basic.hlsli"
+
+float4 main(VSOutput input) : SV_TARGET
 {
-	float4 color;
+	return float4(input.uv,0,1);
 }
-float4 main() : SV_TARGET
-{
-	//色設定
-	/*return float4(1.0f, 1.0f, 1.0f, 1.0f);*/
-	return color;
-}
+
+//float4 main() : SV_TARGET
+//{
+//	//色設定
+//	/*return float4(1.0f, 1.0f, 1.0f, 1.0f);*/
+//	return color;
+//}
