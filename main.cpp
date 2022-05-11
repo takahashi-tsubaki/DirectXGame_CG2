@@ -38,6 +38,15 @@ bool triggerKey(BYTE* key, BYTE* oldkey, int keyNum);
 bool releaseKey(BYTE* key, BYTE* oldkey, int keyNum);
 #pragma endregion 入力関数
 
+XMFLOAT3 scaleVertices[];
+float afinScale[4][4] =
+{
+	{2.0f,0.0f,0.0f,0.0f},//x軸
+	{0.0f,2.0f,0.0f,0.0f},//y軸
+	{0.0f,0.0f,2.0f,0.0f},//z軸
+	{0.0f,0.0f,0.0f,1.0f},//？
+};
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	OutputDebugStringA("Hello DirectX!!\n");
@@ -264,6 +273,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		0,1,2,
 		1,2,3,
 	};
+
+	for (int i = 0; i < _countof(vertices); i++)
+	{
+		scaleVertices[i] = vertices[i];
+	}
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -709,8 +723,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//再びコマンドリストをためる準備
 		result = commandList->Reset(cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
-
-
 
 		//ここまでDirectX毎フレーム処理
 	}
