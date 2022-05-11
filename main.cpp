@@ -266,13 +266,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		1,2,3,
 	};
 
+	float PI = 3.141592f;
 
-	float afinScale[4][4] =
+	float afinRotaX[4][4] =
 	{
-		{2.0f,0.0f,0.0f,0.0f},//x軸
-		{0.0f,2.0f,0.0f,0.0f},//y軸
-		{0.0f,0.0f,2.0f,0.0f},//z軸
-		{0.0f,0.0f,0.0f,1.0f},//？
+		{1.0f,0.0f, 0.0f, 0.0f}, //x = x
+		{0.0f,cos(PI / 4),sin(PI / 4),0.0f},// y=ycosΘ-zsinΘ
+		{0.0f,-sin(PI / 4),cos(PI / 4),0.0f},//z=ysinΘ+zcosΘ
+		{0.0f,0.0f,0.0f,1.0f},//
 	};
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
@@ -598,12 +599,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{
 			for (int i = 0; i < _countof(vertices); i++)
 			{
-				vertices[i].x = afinScale[0][0] * vertices[i].x + afinScale[0][1] * vertices[i].y +
-					afinScale[0][2] * vertices[i].z + afinScale[0][3] * 1;
-				vertices[i].y = afinScale[1][0] * vertices[i].x + afinScale[1][1] * vertices[i].y +
-					afinScale[1][2] * vertices[i].z + afinScale[1][3] * 1;
-				vertices[i].z = afinScale[2][0] * vertices[i].x + afinScale[2][1] * vertices[i].y +
-					afinScale[2][2] * vertices[i].z + afinScale[2][3] * 1;
+				vertices[i].x = afinRotaX[0][0] * vertices[i].x + afinRotaX[0][1] * vertices[i].y +
+					afinRotaX[0][2] * vertices[i].z + afinRotaX[0][3] * 1;
+				vertices[i].y = afinRotaX[1][0] * vertices[i].x + afinRotaX[1][1] * vertices[i].y +
+					afinRotaX[1][2] * vertices[i].z + afinRotaX[1][3] * 1;
+				vertices[i].z = afinRotaX[2][0] * vertices[i].x + afinRotaX[2][1] * vertices[i].y +
+					afinRotaX[2][2] * vertices[i].z + afinRotaX[2][3] * 1;
 			}
 		}
 
