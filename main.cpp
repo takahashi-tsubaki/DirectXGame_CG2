@@ -590,7 +590,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//キーボード情報の取得開始
 		keyboard->Acquire();
-
+		keyInitialize(key, oldkey, sizeof(key) / sizeof(key[0]));
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
 
