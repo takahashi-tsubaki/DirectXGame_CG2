@@ -255,8 +255,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// x     y    z    //座標
 		{-0.5f,+0.5f,0.0f},//左上
 		{+0.5f,+0.5f,0.0f},//右上
-		{-0.5f, 0.0f,0.0f},//左中
-		{+0.5f, 0.0f,0.0f},//右中
 		{-0.5f,-0.5f,0.0f},//左下
 		{+0.5f,-0.5f,0.0f},//右下
 	};
@@ -265,9 +263,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	{
 		0,1,2,
 		1,2,3,
-		3,4,0,
-		3,4,5,
-		5,2
 	};
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
@@ -654,9 +649,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		//プリミティブ形状の設定コマンド
-		/*commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);*/
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+		/*commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);*/
 		
 		//頂点バッファービューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
