@@ -571,6 +571,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
 
+	BYTE key[256] = {};
+	BYTE oldkey[256] = {};
+
 	//ゲームループ
 	while (true)
 	{
@@ -588,6 +591,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 
 		//ここからDirectX毎フレーム処理
+
+		//キーボード情報の取得開始
+		keyboard->Acquire();
+
+		//
+		keyboard->GetDeviceState(sizeof(key), key);
 
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
