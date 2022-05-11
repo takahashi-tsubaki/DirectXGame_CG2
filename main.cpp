@@ -38,14 +38,6 @@ bool triggerKey(BYTE* key, BYTE* oldkey, int keyNum);
 bool releaseKey(BYTE* key, BYTE* oldkey, int keyNum);
 #pragma endregion 入力関数
 
-XMFLOAT3 scaleVertices[];
-float afinScale[4][4] =
-{
-	{2.0f,0.0f,0.0f,0.0f},//x軸
-	{0.0f,2.0f,0.0f,0.0f},//y軸
-	{0.0f,0.0f,2.0f,0.0f},//z軸
-	{0.0f,0.0f,0.0f,1.0f},//？
-};
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -274,10 +266,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		1,2,3,
 	};
 
-	for (int i = 0; i < _countof(vertices); i++)
+
+	float afinScale[4][4] =
 	{
-		scaleVertices[i] = vertices[i];
-	}
+		{2.0f,0.0f,0.0f,0.0f},//x軸
+		{0.0f,2.0f,0.0f,0.0f},//y軸
+		{0.0f,0.0f,2.0f,0.0f},//z軸
+		{0.0f,0.0f,0.0f,1.0f},//？
+	};
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -597,6 +593,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
+
+		if (DIK_1)
+		{
+			for (int i = 0; i < _countof(vertices); i++)
+			{
+				vertices[i].x = afinScale[0][0] * vertices[i].x + afinScale[0][1] * vertices[i].y +
+					afinScale[0][2] * vertices[i].z + afinScale[0][3] * 1;
+				vertices[i].y = afinScale[1][0] * vertices[i].x + afinScale[1][1] * vertices[i].y +
+					afinScale[1][2] * vertices[i].z + afinScale[1][3] * 1;
+				vertices[i].z = afinScale[2][0] * vertices[i].x + afinScale[2][1] * vertices[i].y +
+					afinScale[2][2] * vertices[i].z + afinScale[2][3] * 1;
+			}
+		}
 
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
