@@ -13,4 +13,5 @@ struct VSOutput
 	float4 svpos : SV_POSITION;
 	//uv’l
 	float2 uv : TEXCOORD;
-}
+};
+
