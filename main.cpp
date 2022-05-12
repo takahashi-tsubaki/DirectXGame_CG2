@@ -267,9 +267,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		0,1,2,
 		1,2,3,
 	};
-
 	
-	float angle = 180;
+	int angle = 4;
 	float cosin = cos(PI / angle);
 	float asin = sin(PI / angle);
 
@@ -281,6 +280,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	  {0.0f,0.0f,0.0f,1.0f},//
 	};
 
+	for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+	{
+		vertices[i].x = vertices[i].x * afinRotaZ[0][0] + vertices[i].y * afinRotaZ[0][1] +
+			vertices[i].z * afinRotaZ[0][2] + 1 * afinRotaZ[0][3];
+		vertices[i].y = vertices[i].x * afinRotaZ[1][0] + vertices[i].y * afinRotaZ[1][1] +
+			vertices[i].z * afinRotaZ[1][2] + 1 * afinRotaZ[1][3];
+		vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
+			vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
+	}
+
 	//float afinScale[4][4] =
 	//{
 	//	{2.0f,0.0f,0.0f,0.0f},//x軸
@@ -289,15 +298,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//	{0.0f,0.0f,0.0f,1.0f},//？
 	//};
 
-	for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-	{
-		vertices[i].x =vertices[i].x * afinRotaZ[0][0]  +  vertices[i].y * afinRotaZ[0][1]  +
-			 vertices[i].z *afinRotaZ[0][2] +  1 *afinRotaZ[0][3];
-		vertices[i].y = vertices[i].x * afinRotaZ[1][0] + vertices[i].y * afinRotaZ[1][1] +
-			vertices[i].z * afinRotaZ[1][2] + 1 * afinRotaZ[1][3];
-		vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
-			vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
-	}
 
 	//for (int i = 0; i < 4/* _countof(vertices)*/; i++)
 	//{
@@ -387,6 +387,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	result = dev->CreateCommittedResource(
 		&cbHeapProp,//ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
+
 		&cbResourceDesc,//リソース設定
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
@@ -628,16 +629,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		if (DIK_1)
+
+		
+		if (triggerKey(key,oldkey,DIK_1))
 		{
-			 angle--;
-			
+			 angle = 2;
+			 for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+			 {
+				 vertices[i].x = vertices[i].x * afinRotaZ[0][0] + vertices[i].y * afinRotaZ[0][1] +
+					 vertices[i].z * afinRotaZ[0][2] + 1 * afinRotaZ[0][3];
+				 vertices[i].y = vertices[i].x * afinRotaZ[1][0] + vertices[i].y * afinRotaZ[1][1] +
+					 vertices[i].z * afinRotaZ[1][2] + 1 * afinRotaZ[1][3];
+				 vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
+					 vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
+			 }
+			 OutputDebugStringA("Hit/0\n");
 		}
-		if (angle < 1)
+		else
+		{
+			angle = 4;
+		}
+		/*if (angle < 1)
 		{
 			angle = 180;
-		}
+		}*/
+
 		
+
 
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -665,8 +683,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		viewport[0].Width = window_width;
 		viewport[0].Height = window_height;
-		viewport[0].TopLeftX = -300;
-		viewport[0].TopLeftY = -100;
+		viewport[0].TopLeftX = 0;
+		viewport[0].TopLeftY = 0;
 		viewport[0].MinDepth = 0.0f;
 		viewport[0].MaxDepth = 1.0f;
 
