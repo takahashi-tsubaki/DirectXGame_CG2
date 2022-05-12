@@ -13,6 +13,8 @@
 
 using namespace DirectX;
 
+const float PI = 3.141592f;
+
 //リンクの設定
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -266,7 +268,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		1,2,3,
 	};
 
-	float PI = 3.141592f;
+	
 	float angle = 180;
 	float cosin = cos(PI / angle);
 	float asin = sin(PI / angle);
