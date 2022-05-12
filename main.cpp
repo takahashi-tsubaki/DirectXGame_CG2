@@ -247,7 +247,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//ここまでDirectX初期化処理
 
-
 	//ここから描画初期化処理
 	
 	//頂点データ構造体
