@@ -268,33 +268,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		1,2,3,
 	};
 	
-	int angle = 6;
-	float cosin = cos(PI / angle);
-	float sain = sin(PI / angle);
-
-	float afinRotaZ[4][4] =
-	{
-	  {cosin,sain,0.0f,0.0f},//x=cosΘ-ysinΘ
-	  {-sain,cosin,0.0f,0.0f},//y=xsinΘ+ycosΘ
-	  {0.0f,0.0f,1.0f,0.0f},//z=z
-	  {0.0f,0.0f,0.0f,1.0f},//
-	};
-
-	float afinScale[4][4] =
-	{
-		{2.0f,0.0f,0.0f,0.0f},//x軸
-		{0.0f,2.0f,0.0f,0.0f},//y軸
-		{0.0f,0.0f,2.0f,0.0f},//z軸
-		{0.0f,0.0f,0.0f,1.0f},//？
-	};
-
-	float afinShrink[4][4] =
-	{
-		{0.5f,0.0f,0.0f,0.0f},//x軸
-		{0.0f,0.5f,0.0f,0.0f},//y軸
-		{0.0f,0.0f,0.5f,0.0f},//z軸
-		{0.0f,0.0f,0.0f,1.0f},//？
-	};
+	
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -616,7 +590,63 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		if (triggerKey(key,oldkey,DIK_1))
+		int angle = 180;
+		float cosin = cos(PI / angle);
+		float sain = sin(PI / angle);
+		
+		float transX = 0.0f;
+		if (pressKey(key, oldkey, DIK_D))
+		{
+			transX = 0.01f;
+		}
+		else if (pressKey(key, oldkey, DIK_A))
+		{
+			transX = -0.01f;
+		}
+		float transY = 0.0f;
+		if (pressKey(key, oldkey, DIK_W))
+		{
+			transY = 0.01f;
+		}
+		else if (pressKey(key, oldkey, DIK_S))
+		{
+			transY = -0.01f;
+		}
+		float transZ = 0.0f;
+
+		float afinRotaZ[4][4] =
+		{
+		  {cosin,sain,0.0f,0.0f},//x=cosΘ-ysinΘ
+		  {-sain,cosin,0.0f,0.0f},//y=xsinΘ+ycosΘ
+		  {0.0f,0.0f,1.0f,0.0f},//z=z
+		  {0.0f,0.0f,0.0f,1.0f},//
+		};
+
+		float afinScale[4][4] =
+		{
+			{1.01f,0.0f,0.0f,0.0f},//x軸
+			{0.0f,1.01f,0.0f,0.0f},//y軸
+			{0.0f,0.0f,1.01f,0.0f},//z軸
+			{0.0f,0.0f,0.0f,1.0f},//？
+		};
+
+		float afinShrink[4][4] =
+		{
+			{0.99f,0.0f,0.0f,0.0f},//x軸
+			{0.0f,0.99f,0.0f,0.0f},//y軸
+			{0.0f,0.0f,0.99f,0.0f},//z軸
+			{0.0f,0.0f,0.0f,1.0f},//？
+		};
+
+		float afinTranslation[4][4] =
+		{
+		  {1.0f, 0.0f, 0.0f, transX},//Tx
+		  {0.0f, 1.0f, 0.0f, transY},//Ty
+		  {0.0f, 0.0f, 1.0f, transZ},//Tz
+		  {0.0f, 0.0f, 0.0f, 1.0f},//1
+		};
+
+		if (pressKey(key,oldkey,DIK_1))
 		{
 			 
 			 for (int i = 0; i < 4/* _countof(vertices)*/; i++)
@@ -629,7 +659,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 					 vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
 			 }
 		}
-		if (triggerKey(key, oldkey, DIK_2))
+		if (pressKey(key, oldkey, DIK_2))
 		{
 			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
 			{
@@ -642,7 +672,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 			
 		}
-		if (triggerKey(key, oldkey, DIK_3))
+		if (pressKey(key, oldkey, DIK_3))
 		{
 			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
 			{
@@ -652,6 +682,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 					vertices[i].z * afinShrink[1][2] + 1 * afinShrink[1][3];
 				vertices[i].z = vertices[i].x * afinShrink[2][0] + vertices[i].y * afinShrink[2][1] +
 					vertices[i].z * afinShrink[2][2] + 1 * afinShrink[2][3];
+			}
+
+		}
+		if (pressKey(key, oldkey, DIK_W)|| pressKey(key, oldkey, DIK_S)
+			|| pressKey(key, oldkey, DIK_A)|| pressKey(key, oldkey, DIK_D))
+		{
+			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+			{
+				vertices[i].x = vertices[i].x * afinTranslation[0][0] + vertices[i].y * afinTranslation[0][1] +
+					vertices[i].z * afinTranslation[0][2] + 1 * afinTranslation[0][3];
+				vertices[i].y = vertices[i].x * afinTranslation[1][0] + vertices[i].y * afinTranslation[1][1] +
+					vertices[i].z * afinTranslation[1][2] + 1 * afinTranslation[1][3];
+				vertices[i].z = vertices[i].x * afinTranslation[2][0] + vertices[i].y * afinTranslation[2][1] +
+					vertices[i].z * afinTranslation[2][2] + 1 * afinTranslation[2][3];
 			}
 
 		}
