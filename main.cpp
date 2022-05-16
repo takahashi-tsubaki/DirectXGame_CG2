@@ -268,46 +268,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		1,2,3,
 	};
 	
-	int angle = 4;
+	int angle = 6;
 	float cosin = cos(PI / angle);
-	float asin = sin(PI / angle);
+	float sain = sin(PI / angle);
 
 	float afinRotaZ[4][4] =
 	{
-	  {cosin,asin,0.0f,0.0f},//x=cosΘ-ysinΘ
-	  {-asin,cosin,0.0f,0.0f},//y=xsinΘ+ycosΘ
+	  {cosin,sain,0.0f,0.0f},//x=cosΘ-ysinΘ
+	  {-sain,cosin,0.0f,0.0f},//y=xsinΘ+ycosΘ
 	  {0.0f,0.0f,1.0f,0.0f},//z=z
 	  {0.0f,0.0f,0.0f,1.0f},//
 	};
 
-	for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+	float afinScale[4][4] =
 	{
-		vertices[i].x = vertices[i].x * afinRotaZ[0][0] + vertices[i].y * afinRotaZ[0][1] +
-			vertices[i].z * afinRotaZ[0][2] + 1 * afinRotaZ[0][3];
-		vertices[i].y = vertices[i].x * afinRotaZ[1][0] + vertices[i].y * afinRotaZ[1][1] +
-			vertices[i].z * afinRotaZ[1][2] + 1 * afinRotaZ[1][3];
-		vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
-			vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
-	}
+		{2.0f,0.0f,0.0f,0.0f},//x軸
+		{0.0f,2.0f,0.0f,0.0f},//y軸
+		{0.0f,0.0f,2.0f,0.0f},//z軸
+		{0.0f,0.0f,0.0f,1.0f},//？
+	};
 
-	//float afinScale[4][4] =
-	//{
-	//	{2.0f,0.0f,0.0f,0.0f},//x軸
-	//	{0.0f,2.0f,0.0f,0.0f},//y軸
-	//	{0.0f,0.0f,2.0f,0.0f},//z軸
-	//	{0.0f,0.0f,0.0f,1.0f},//？
-	//};
-
-
-	//for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-	//{
-	//	vertices[i].x = afinScale[0][0] * vertices[i].x + afinScale[0][1] * vertices[i].y +
-	//		afinScale[0][2] * vertices[i].z + afinScale[0][3] * 1;
-	//	vertices[i].y = afinScale[1][0] * vertices[i].x + afinScale[1][1] * vertices[i].y +
-	//		afinScale[1][2] * vertices[i].z + afinScale[1][3] * 1;
-	//	vertices[i].z = afinScale[2][0] * vertices[i].x + afinScale[2][1] * vertices[i].y +
-	//		afinScale[2][2] * vertices[i].z + afinScale[2][3] * 1;
-	//}
+	float afinShrink[4][4] =
+	{
+		{0.5f,0.0f,0.0f,0.0f},//x軸
+		{0.0f,0.5f,0.0f,0.0f},//y軸
+		{0.0f,0.0f,0.5f,0.0f},//z軸
+		{0.0f,0.0f,0.0f,1.0f},//？
+	};
 
 	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -629,11 +616,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
 
-
-		
 		if (triggerKey(key,oldkey,DIK_1))
 		{
-			 angle = 2;
+			 
 			 for (int i = 0; i < 4/* _countof(vertices)*/; i++)
 			 {
 				 vertices[i].x = vertices[i].x * afinRotaZ[0][0] + vertices[i].y * afinRotaZ[0][1] +
@@ -643,18 +628,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				 vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
 					 vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
 			 }
-			 OutputDebugStringA("Hit/0\n");
 		}
-		else
+		if (triggerKey(key, oldkey, DIK_2))
 		{
-			angle = 4;
+			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+			{
+				vertices[i].x = vertices[i].x * afinScale[0][0] + vertices[i].y * afinScale[0][1] +
+					vertices[i].z * afinScale[0][2] + 1 * afinScale[0][3];
+				vertices[i].y = vertices[i].x * afinScale[1][0] + vertices[i].y * afinScale[1][1] +
+					vertices[i].z * afinScale[1][2] + 1 * afinScale[1][3];
+				vertices[i].z = vertices[i].x * afinScale[2][0] + vertices[i].y * afinScale[2][1] +
+					vertices[i].z * afinScale[2][2] + 1 * afinScale[2][3];
+			}
+			
 		}
-		/*if (angle < 1)
+		if (triggerKey(key, oldkey, DIK_3))
 		{
-			angle = 180;
-		}*/
+			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
+			{
+				vertices[i].x = vertices[i].x * afinShrink[0][0] + vertices[i].y * afinShrink[0][1] +
+					vertices[i].z * afinShrink[0][2] + 1 * afinShrink[0][3];
+				vertices[i].y = vertices[i].x * afinShrink[1][0] + vertices[i].y * afinShrink[1][1] +
+					vertices[i].z * afinShrink[1][2] + 1 * afinShrink[1][3];
+				vertices[i].z = vertices[i].x * afinShrink[2][0] + vertices[i].y * afinShrink[2][1] +
+					vertices[i].z * afinShrink[2][2] + 1 * afinShrink[2][3];
+			}
 
-		
+		}
+
+		for (int i = 0; i < _countof(vertices); i++)
+		{
+			vertMap[i] = vertices[i];//座標をコピー
+		}
 
 
 		//バックバッファの番号を解除
