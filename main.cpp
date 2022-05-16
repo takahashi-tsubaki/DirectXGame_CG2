@@ -590,7 +590,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
 
-		int angle = 180;
+		int angle = 0;
+		if (pressKey(key, oldkey, DIK_Z))
+		{
+			angle = 180;
+		}
+		else if (pressKey(key, oldkey, DIK_C))
+		{
+			angle = -180;
+		}
 		float cosin = cos(PI / angle);
 		float sain = sin(PI / angle);
 		
@@ -646,7 +654,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		  {0.0f, 0.0f, 0.0f, 1.0f},//1
 		};
 
-		if (pressKey(key,oldkey,DIK_1))
+		if (pressKey(key,oldkey,DIK_Z)|| pressKey(key, oldkey, DIK_C))
 		{
 			 
 			 for (int i = 0; i < 4/* _countof(vertices)*/; i++)
