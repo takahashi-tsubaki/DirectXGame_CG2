@@ -7,6 +7,7 @@
 #include <string>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include <DirectXTex.h>
 #define DIRECTINPUT_VERSION  0x0800
 #include <dinput.h>
 #include <wrl.h>
@@ -411,16 +412,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	const size_t textureHeight = 256;
 	//配列の要素数
 	const size_t imageDataCount = textureWidth * textureHeight;
-	//画像イメージデータ配列
-	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount];
+	////画像イメージデータ配列
+	//XMFLOAT4* imageData = new XMFLOAT4[imageDataCount];
 
-	//全ピクセルの色を初期化
-	for (int i = 0; i < imageDataCount; i++)
+	////全ピクセルの色を初期化
+	//for (int i = 0; i < imageDataCount; i++)
+	//{
+	//	imageData[i].x = 0.0f;//R
+	//	imageData[i].y = 1.0f;//G
+	//	imageData[i].z = 0.0f;//B
+	//	imageData[i].w = 1.0f;//A
+	//}
+
+	TexMetadata metaData{};
+	ScratchImage scrachImg{};
+	//WICテクスチャのロード
+	result = LoadFromWICFile(
+	L"Resource/mario.jpg",//「Resource」フォルダの「mario.jpg」
+	WIC_FLAGS_NONE,
+	&metaData, scrachImg
+	);
+
+	ScratchImage mipChain{};
+	//
+	result = GenerateMipMaps(scrachImg.GetImages(), scrachImg.GetImageCount(), scrachImg.GetMetadata(),
+		TEX_FILTER_DEFAULT, 0, mipChain);
+	if (SUCCEEDED(result))
 	{
-		imageData[i].x = 0.0f;//R
-		imageData[i].y = 1.0f;//G
-		imageData[i].z = 0.0f;//B
-		imageData[i].w = 1.0f;//A
+		scrachImg = std::move(mipChain);
+		metaData = scrachImg.GetMetadata();
 	}
 
 	//ヒープ設定
@@ -432,11 +452,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//リソース設定
 	D3D12_RESOURCE_DESC textureResourceDesc{};
 	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	textureResourceDesc.Width = textureWidth;
-	textureResourceDesc.Height = textureHeight;
-	textureResourceDesc.DepthOrArraySize = 1;
-	textureResourceDesc.MipLevels = 1;
+	textureResourceDesc.Format = metaData.format;
+	textureResourceDesc.Width = metaData.width;
+	textureResourceDesc.Height = (UINT)metaData.height;
+	textureResourceDesc.DepthOrArraySize = (UINT16)metaData.arraySize;
+	textureResourceDesc.MipLevels = (UINT16)metaData.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
 
 	//テクスチャバッファを生成
@@ -448,17 +468,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&textureBuff));
-
-	//テクスチャバッファにデータ転送
-	result = textureBuff->WriteToSubresource(
-		0,//
-		nullptr,//全領域へコピー
-		imageData,//元データアドレス
-		sizeof(XMFLOAT4) * textureWidth,//1ラインサイズ
-		sizeof(XMFLOAT4) * imageDataCount//全サイズ
-	);
-	//元データ解放
-	delete[] imageData;
 
 	const size_t kMaxSRVCount = 2056;//SRV = シェーダリソースビュー
 
@@ -478,10 +487,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	//シェーダリソースビュー設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	srvDesc.Format = resDesc.Format;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = resDesc.MipLevels;
+
+	//全ミップマップについて
+	for (size_t i = 0; i < metaData.mipLevels; i++)
+	{
+		//ミップマップレベルを指定してイメージを取得
+		const Image* img = scrachImg.GetImage(i, 0, 0);
+		//テクスチャバッファにデータを転送
+		result = textureBuff->WriteToSubresource(
+		(UINT)i,//
+		nullptr,//全領域コピー
+		img->pixels,//元データアドレス
+		(UINT)img->rowPitch,//1ラインサイズ
+		(UINT)img->slicePitch//1枚サイズ
+		);
+		assert(SUCCEEDED(result));
+	}
 
 	//ハンドルのさす位置にシェーダリソースビュー作成
 	dev->CreateShaderResourceView(textureBuff, &srvDesc, srvHandle);
@@ -611,11 +636,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	//共通設定
-	blenddesc.BlendEnable    = true;//ブレンドを有効にする
-	blenddesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlendAlpha  = D3D12_BLEND_ONE;//ソースの値を100%使う
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//ソースの値を0%使う
+	////共通設定
+	//blenddesc.BlendEnable    = true;//ブレンドを有効にする
+	//blenddesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlendAlpha  = D3D12_BLEND_ONE;//ソースの値を100%使う
+	//blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//ソースの値を0%使う
 
 	////	加算合成
 	//blenddesc.BlendOp   = D3D12_BLEND_OP_ADD;//加算
@@ -632,10 +657,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;//1.0f-デストカラーの値
 	//blenddesc.DestBlend = D3D12_BLEND_ZERO;//使わない
 
-	//半透明
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
-	blenddesc.DestBlend = D3D12_BLEND_SRC_ALPHA;//1.0f-ソースのアルファ値
+	////半透明
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
+	//blenddesc.DestBlend = D3D12_BLEND_SRC_ALPHA;//1.0f-ソースのアルファ値
 
 	//頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
