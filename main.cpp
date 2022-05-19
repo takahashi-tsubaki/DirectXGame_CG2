@@ -417,10 +417,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//全ピクセルの色を初期化
 	for (int i = 0; i < imageDataCount; i++)
 	{
-		imageData[i].x = 0.0f;//R
-		imageData[i].y = 1.0f;//G
-		imageData[i].z = 0.0f;//B
-		imageData[i].w = 1.0f;//A
+		
+		if (i % 4 == 0)
+		{
+			imageData[i].x = 1.0f;//R
+			imageData[i].y = 0.0f;//G
+			imageData[i].z = 0.0f;//B
+			imageData[i].w = 1.0f;//A
+		}
+		else if(i % 7 == 0)
+		{
+			imageData[i].x = 0.0f;//R
+			imageData[i].y = 0.0f;//G
+			imageData[i].z = 1.0f;//B
+			imageData[i].w = 1.0f;//A
+		}
+		else
+		{
+			imageData[i].x = 0.0f;//R
+			imageData[i].y = 1.0f;//G
+			imageData[i].z = 0.0f;//B
+			imageData[i].w = 1.0f;//A
+		}
+		
+
+		//imageData[i % 4 == 2].x = 0.0f;//R
+		//imageData[i % 4 == 2].y = 0.0f;//G
+		//imageData[i % 4 == 2].z = 1.0f;//B
+		//imageData[i % 4 == 2].w = 1.0f;//A
+
+		//imageData[i % 4 == 3].x = 1.0f;//R
+		//imageData[i % 4 == 3].y = 1.0f;//G
+		//imageData[i % 4 == 3].z = 1.0f;//B
+		//imageData[i % 4 == 3].w = 1.0f;//A
+
 	}
 
 	//ヒープ設定
@@ -611,11 +641,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_RENDER_TARGET_BLEND_DESC& blenddesc = pipelineDesc.BlendState.RenderTarget[0];
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	//共通設定
-	blenddesc.BlendEnable    = true;//ブレンドを有効にする
-	blenddesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlendAlpha  = D3D12_BLEND_ONE;//ソースの値を100%使う
-	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//ソースの値を0%使う
+	////共通設定
+	//blenddesc.BlendEnable    = true;//ブレンドを有効にする
+	//blenddesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlendAlpha  = D3D12_BLEND_ONE;//ソースの値を100%使う
+	//blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;//ソースの値を0%使う
 
 	////	加算合成
 	//blenddesc.BlendOp   = D3D12_BLEND_OP_ADD;//加算
@@ -632,10 +662,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;//1.0f-デストカラーの値
 	//blenddesc.DestBlend = D3D12_BLEND_ZERO;//使わない
 
-	//半透明
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
-	blenddesc.DestBlend = D3D12_BLEND_SRC_ALPHA;//1.0f-ソースのアルファ値
+	////半透明
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;//加算
+	//blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;//ソースのアルファ値
+	//blenddesc.DestBlend = D3D12_BLEND_SRC_ALPHA;//1.0f-ソースのアルファ値
 
 	//頂点レイアウトの設定
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
