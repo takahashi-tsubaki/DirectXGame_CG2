@@ -148,6 +148,10 @@ void Model::initialize(XMFLOAT3 vertices[3], ID3D12Device* dev)
 	ibView.Format = DXGI_FORMAT_R16_UINT;
 	ibView.SizeInBytes = sizeIB;
 
+	////単位行列を代入
+	//constMapTransform->mat = XMMatrixIdentity();
+
+
 }
 
 void Model::Update()
@@ -168,4 +172,15 @@ void Model::Draw(ID3D12GraphicsCommandList* commandList)
 	//描画コマンド
 
 	commandList->DrawIndexedInstanced(_countof(this->indices), 1, 0, 0, 0);//全ての頂点を使って描画
+}
+void Model::CreateBuffer(HRESULT result, ID3D12Device* dev)
+{
+	result = dev->CreateCommittedResource(
+		&cbHeapProp,//
+		D3D12_HEAP_FLAG_NONE,
+		&cbResourceDesc,//
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffTransform));
+	assert(SUCCEEDED);
 }

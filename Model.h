@@ -32,6 +32,8 @@ public:
 
 	void Draw(ID3D12GraphicsCommandList* commandList);
 
+	void CreateBuffer(HRESULT result, ID3D12Device* dev);
+
 private:
 	//変数
 
@@ -87,5 +89,14 @@ private:
 
 	//インデックスバッファビューの生成
 	D3D12_INDEX_BUFFER_VIEW ibView{};
+
+	ID3D12Resource* constBuffTransform = nullptr;
+
+	struct ConstBufferDataTransform
+	{
+		XMMATRIX mat;
+	};
+
+	ConstBufferDataTransform* constMapTransform = nullptr;
 
 };
