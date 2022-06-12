@@ -10,7 +10,7 @@
 #define DIRECTINPUT_VERSION  0x0800
 #include <dinput.h>
 #include <wrl.h>
-
+#include "Model.h"
 using namespace DirectX;
 
 const float PI = 3.141592f;
@@ -100,7 +100,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12GraphicsCommandList* commandList = nullptr;
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12DescriptorHeap* rtvHeap = nullptr;
-
 
 	//DXGIファクトリーの生成
 	result = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
@@ -247,167 +246,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//DISCL_NOWINKEY     Windowsキーを無効にする
 
 
-
 	//ここまでDirectX初期化処理
 
 
-	//ここから描画初期化処理
+	//ここからオブジェクトの描画初期化処理
 	//頂点データ
-	XMFLOAT3 vertices[] =
+	Model* model[10];
+	for (int i = 0; i < 10; i++)
 	{
-		// x     y    z    //座標
-		{-0.5f,+0.5f,0.0f},//左上
-		{+0.5f,+0.5f,0.0f},//右上
-		{-0.5f,-0.5f,0.0f},//左下
-		{+0.5f,-0.5f,0.0f},//右下
-	};
-
-	uint16_t indices[] =
-	{
-		0,1,2,
-		1,2,3,
-	};
-
-
-
-	//頂点データ全体のサイズ = 頂点データ1つ分のサイズ * 頂点の要素数
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
-
-	//頂点バッファの設定
-	D3D12_HEAP_PROPERTIES heapProp{};//ヒープ設定
-	heapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
-	//リソース設定
-	D3D12_RESOURCE_DESC resDesc{};
-	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resDesc.Width = sizeVB;//頂点データ全体のサイズ
-	resDesc.Height = 1;
-	resDesc.DepthOrArraySize = 1;
-	resDesc.MipLevels = 1;
-	resDesc.SampleDesc.Count = 1;
-	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	//頂点バッファの作成
-	ID3D12Resource* vertBuff = nullptr;
-	result = dev->CreateCommittedResource(
-		&heapProp,//ヒープ設定
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,//リソース設定
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&vertBuff));
-	assert(SUCCEEDED(result));
-
-	//GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
-	XMFLOAT3* vertMap = nullptr;
-	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
-	assert(SUCCEEDED(result));
-	//全頂点に対して
-	for (int i = 0; i < _countof(vertices); i++)
-	{
-		vertMap[i] = vertices[i];//座標をコピー
+		model[i] = new Model();
+		//data
+		XMFLOAT3 vertices[] =
+		{
+			// x     y    z    //座標
+			{-2.0f +(i % 2 * 1.0f),+2.0f-(i * 0.2f),0.0f},//左上
+			{-2.0f +(i % 2 * 1.0f),+1.6f-(i * 0.2f),0.0f},//左下
+			{-1.6f +(i % 2 * 1.0f),+1.6f-(i * 0.2f),0.0f},//右下
+		};
+		model[i]->initialize(vertices, dev);
 	}
 
-	//繋がりを解除
-	vertBuff->Unmap(0, nullptr);
+	
 
-	//頂点バッファービューの作成
-	D3D12_VERTEX_BUFFER_VIEW vbView{};
-	//GPU仮想アドレス
-	vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
-	//頂点バッファのサイズ
-	vbView.SizeInBytes = sizeVB;
-	//頂点1つ分のデータサイズ
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
 
 	ID3DBlob* vsBlob = nullptr;//頂点シェーダオブジェクト
 	ID3DBlob* psBlob = nullptr;//ピクセルシェーダオブジェクト
 	ID3DBlob* errorBlob = nullptr;//エラーオブジェクト
 
-	//定数バッファ
-	struct ConstBufferDataMaterial
-	{
-		XMFLOAT4 color;//色
-	};
-
-	//ヒープ設定
-	D3D12_HEAP_PROPERTIES cbHeapProp{};
-	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-	//リソース設定
-	D3D12_RESOURCE_DESC cbResourceDesc{};
-	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;
-	cbResourceDesc.Height = 1;
-	cbResourceDesc.DepthOrArraySize = 1;
-	cbResourceDesc.MipLevels = 1;
-	cbResourceDesc.SampleDesc.Count = 1;
-	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	ID3D12Resource* constBuffMaterial = nullptr;
-	//定数バッファの生成
-	result = dev->CreateCommittedResource(
-		&cbHeapProp,//ヒープ設定
-		D3D12_HEAP_FLAG_NONE,
-
-		&cbResourceDesc,//リソース設定
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&constBuffMaterial));
-	assert(SUCCEEDED(result));
-
-	//定数バッファのマッピング
-	ConstBufferDataMaterial* constMapMaterial = nullptr;
-	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
-	assert(SUCCEEDED(result));
-
-	//値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);
-
-	//ルートパラメータ
-	D3D12_ROOT_PARAMETER rootParam = {};
-	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//定数バッファビュー
-	rootParam.Descriptor.ShaderRegister = 0;//定数バッファ番号
-	rootParam.Descriptor.RegisterSpace = 0;//デフォルト値
-	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダから見える
-
-	//インデックスデータ全体のサイズ
-	UINT sizeIB = static_cast<UINT>(sizeof(uint16_t)) * _countof(indices);
-
-	//リソース設定
-	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resDesc.Width = sizeIB;
-	resDesc.Height = 1;
-	resDesc.DepthOrArraySize = 1;
-	resDesc.MipLevels = 1;
-	resDesc.SampleDesc.Count = 1;
-	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	//インデックスバッファの生成
-	ID3D12Resource* indexBuff = nullptr;
-	result = dev->CreateCommittedResource(
-		&cbHeapProp,//ヒープ設定
-		D3D12_HEAP_FLAG_NONE,
-		&cbResourceDesc,//リソース設定
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&indexBuff));
-
-	//インデックスバッファをマッピング
-	uint16_t* indexMap = nullptr;
-	result = indexBuff->Map(0, nullptr, (void**)&indexMap);
-	//全インデックスに対して
-	for (int i = 0; i < _countof(indices); i++)
-	{
-		indexMap[i] = indices[i];
-	}
-	//マッピング解除
-	indexBuff->Unmap(0, nullptr);
-
-	//インデックスバッファビューの生成
-	D3D12_INDEX_BUFFER_VIEW ibView{};
-	ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	ibView.Format = DXGI_FORMAT_R16_UINT;
-	ibView.SizeInBytes = sizeIB;
 
 	//頂点シェーダの読み込みとコンパイル(頂点シェーダは頂点の座標変換)
 	result = D3DCompileFromFile(
@@ -534,6 +399,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	pipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;//0~255指定のRGBA
 	pipelineDesc.SampleDesc.Count = 1;//1ピクセルにつき1回レンダリング
 
+
+	//ルートパラメータ
+	D3D12_ROOT_PARAMETER rootParam = {};
+	rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;//定数バッファビュー
+	rootParam.Descriptor.ShaderRegister = 0;//定数バッファ番号
+	rootParam.Descriptor.RegisterSpace = 0;//デフォルト値
+	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダから見える
+
 	//ルートシグネチャ
 	ID3D12RootSignature* rootSignature;
 
@@ -569,14 +442,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ゲームループ
 	while (true)
 	{
-		//ウィンドウメッセージ処理
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-
 		}
-
 		if (msg.message == WM_QUIT)
 		{
 			break;
@@ -589,130 +459,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		keyInitialize(key, oldkey, sizeof(key) / sizeof(key[0]));
 		//
 		keyboard->GetDeviceState(sizeof(key), key);
-
-		int angle = 0;
-		if (pressKey(key, oldkey, DIK_Z))
-		{
-			angle = 180;
-		}
-		else if (pressKey(key, oldkey, DIK_C))
-		{
-			angle = -180;
-		}
-		float cosin = cos(PI / angle);
-		float sain = sin(PI / angle);
-
-		float transX = 0.0f;
-		if (pressKey(key, oldkey, DIK_D))
-		{
-			transX = 0.01f;
-		}
-		else if (pressKey(key, oldkey, DIK_A))
-		{
-			transX = -0.01f;
-		}
-		float transY = 0.0f;
-		if (pressKey(key, oldkey, DIK_W))
-		{
-			transY = 0.01f;
-		}
-		else if (pressKey(key, oldkey, DIK_S))
-		{
-			transY = -0.01f;
-		}
-		float transZ = 0.0f;
-
-		float afinRotaZ[4][4] =
-		{
-		  {cosin,sain,0.0f,0.0f},//x=cosΘ-ysinΘ
-		  {-sain,cosin,0.0f,0.0f},//y=xsinΘ+ycosΘ
-		  {0.0f,0.0f,1.0f,0.0f},//z=z
-		  {0.0f,0.0f,0.0f,1.0f},//
-		};
-
-		float afinScale[4][4] =
-		{
-			{1.01f,0.0f,0.0f,0.0f},//x軸
-			{0.0f,1.01f,0.0f,0.0f},//y軸
-			{0.0f,0.0f,1.01f,0.0f},//z軸
-			{0.0f,0.0f,0.0f,1.0f},//？
-		};
-
-		float afinShrink[4][4] =
-		{
-			{0.99f,0.0f,0.0f,0.0f},//x軸
-			{0.0f,0.99f,0.0f,0.0f},//y軸
-			{0.0f,0.0f,0.99f,0.0f},//z軸
-			{0.0f,0.0f,0.0f,1.0f},//？
-		};
-
-		float afinTranslation[4][4] =
-		{
-		  {1.0f, 0.0f, 0.0f, transX},//Tx
-		  {0.0f, 1.0f, 0.0f, transY},//Ty
-		  {0.0f, 0.0f, 1.0f, transZ},//Tz
-		  {0.0f, 0.0f, 0.0f, 1.0f},//1
-		};
-
-		if (pressKey(key, oldkey, DIK_Z) || pressKey(key, oldkey, DIK_C))
-		{
-
-			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-			{
-				vertices[i].x = vertices[i].x * afinRotaZ[0][0] + vertices[i].y * afinRotaZ[0][1] +
-					vertices[i].z * afinRotaZ[0][2] + 1 * afinRotaZ[0][3];
-				vertices[i].y = vertices[i].x * afinRotaZ[1][0] + vertices[i].y * afinRotaZ[1][1] +
-					vertices[i].z * afinRotaZ[1][2] + 1 * afinRotaZ[1][3];
-				vertices[i].z = vertices[i].x * afinRotaZ[2][0] + vertices[i].y * afinRotaZ[2][1] +
-					vertices[i].z * afinRotaZ[2][2] + 1 * afinRotaZ[2][3];
-			}
-		}
-		if (pressKey(key, oldkey, DIK_2))
-		{
-			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-			{
-				vertices[i].x = vertices[i].x * afinScale[0][0] + vertices[i].y * afinScale[0][1] +
-					vertices[i].z * afinScale[0][2] + 1 * afinScale[0][3];
-				vertices[i].y = vertices[i].x * afinScale[1][0] + vertices[i].y * afinScale[1][1] +
-					vertices[i].z * afinScale[1][2] + 1 * afinScale[1][3];
-				vertices[i].z = vertices[i].x * afinScale[2][0] + vertices[i].y * afinScale[2][1] +
-					vertices[i].z * afinScale[2][2] + 1 * afinScale[2][3];
-			}
-
-		}
-		if (pressKey(key, oldkey, DIK_3))
-		{
-			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-			{
-				vertices[i].x = vertices[i].x * afinShrink[0][0] + vertices[i].y * afinShrink[0][1] +
-					vertices[i].z * afinShrink[0][2] + 1 * afinShrink[0][3];
-				vertices[i].y = vertices[i].x * afinShrink[1][0] + vertices[i].y * afinShrink[1][1] +
-					vertices[i].z * afinShrink[1][2] + 1 * afinShrink[1][3];
-				vertices[i].z = vertices[i].x * afinShrink[2][0] + vertices[i].y * afinShrink[2][1] +
-					vertices[i].z * afinShrink[2][2] + 1 * afinShrink[2][3];
-			}
-
-		}
-		if (pressKey(key, oldkey, DIK_W) || pressKey(key, oldkey, DIK_S)
-			|| pressKey(key, oldkey, DIK_A) || pressKey(key, oldkey, DIK_D))
-		{
-			for (int i = 0; i < 4/* _countof(vertices)*/; i++)
-			{
-				vertices[i].x = vertices[i].x * afinTranslation[0][0] + vertices[i].y * afinTranslation[0][1] +
-					vertices[i].z * afinTranslation[0][2] + 1 * afinTranslation[0][3];
-				vertices[i].y = vertices[i].x * afinTranslation[1][0] + vertices[i].y * afinTranslation[1][1] +
-					vertices[i].z * afinTranslation[1][2] + 1 * afinTranslation[1][3];
-				vertices[i].z = vertices[i].x * afinTranslation[2][0] + vertices[i].y * afinTranslation[2][1] +
-					vertices[i].z * afinTranslation[2][2] + 1 * afinTranslation[2][3];
-			}
-
-		}
-
-		for (int i = 0; i < _countof(vertices); i++)
-		{
-			vertMap[i] = vertices[i];//座標をコピー
-		}
-
 
 		//バックバッファの番号を解除
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -793,17 +539,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		/*commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);*/
 
 		//頂点バッファービューの設定コマンド
-		commandList->IASetVertexBuffers(0, 1, &vbView);
+		for (int i = 0; i < 10; i++)
+		{
+			model[i]->Draw(commandList);
+		}
 
-		//定数バッファビュー(CBV)の設定コマンド
-		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
-
-		//インデックスバッファビューの設定コマンド
-		commandList->IASetIndexBuffer(&ibView);
-
-		//描画コマンド
-
-		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);//全ての頂点を使って描画
 		//ビューポート設定コマンドを、コマンドリストに積む
 		//commandList->RSSetViewports(1, &viewport[1]);
 		//commandList->DrawInstanced(_countof(vertices), 1, 0, 0);//全ての頂点を使って描画
@@ -850,9 +590,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 
 		//ここまでDirectX毎フレーム処理
+		
 	}
 	UnregisterClass(w.lpszClassName, w.hInstance);
-
+	for (int i = 0; i < 10; i++)
+	{
+		delete model[i];
+	}
+	
 
 	return 0;
 }
