@@ -794,7 +794,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//パイプラインステートとルートシグネチャの設定コマンド
 		
 		commandList->SetPipelineState(pipelineState);
-
 		
 		commandList->SetGraphicsRootSignature(rootSignature);
 
